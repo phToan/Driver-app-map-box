@@ -1,11 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, SafeAreaView, Text, ScrollView, Linking } from 'react-native';
 // import SysModal from '../../sysModal/sys_modal';
 import NotificationModal from '../../Components/notificationModal';
 import { styles } from './styles';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AppContext from '../../Context';
 import { Header } from '../../Components/Header';
 import { OrderTransport } from '../../Components/orderTransport';
 import { InfoOrder } from '../../Components/addressOrder';
@@ -15,12 +14,13 @@ import { ButtonConfirm } from '../../Components/ButtonConfirm';
 import { NameScreen } from '../../Constants/nameScreen';
 import { instance } from '../../Api/instance';
 import LoadingModal from '../../Components/LoadingModal';
+import { getDatabase, ref, update } from 'firebase/database';
+import AppContext from '../../Context';
 
 const OrderInfo = ({ route, navigation }) => {
+    const { isOrderSelected } = useContext(AppContext);
     const item = route.params?.item;
     const visibleButton = route.param;
-    const { status, setStatus, setSelectedID, isTake, setTake, socket } =
-        useContext(AppContext);
     const [showModal, setShowModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [vehicleID, setVehicle] = useState('');
@@ -44,88 +44,36 @@ const OrderInfo = ({ route, navigation }) => {
         getData();
     }, []);
 
-    const data = {
-        order_id: item.id,
-        name: name,
-        phone: phone,
-        dob: dob,
-        vehicle: vehicleID,
-    };
-
-    const payload = {
-        id_Order: item.id,
-        driver_id: id,
-        status: 0,
-    };
-
-    const getOrder = () => {};
-
     const onClickTakeOrder = async () => {
-        // setLoading(true);
-        // if (status) {
-        //     setLoading(false);
-        //     setErrorMessage('Bạn đang có đơn hàng chưa hoàn thành !!!');
-        //     setShowModal(true);
-        // } else {
-        //     await instance
-        //         .get('/order/customer', {
-        //             params: {
-        //                 id: item.id,
-        //             },
-        //         })
-        //         .then(async (res) => {
-        //             console.log(res.data.data.rows);
-        //             if (res.data.err == 0) {
-        //                 if (res.data.data.rows[0].driver_id != 0) {
-        //                     setLoading(false);
-        //                     setErrorMessage(
-        //                         'Đơn hàng đã được tài xế khác nhận vui lòng nhận đơn hàng khác'
-        //                     );
-        //                     setShowModal(true);
-        //                 } else {
-        //                     await instance
-        //                         .post('/order/driver', payload)
-        //                         .then((res) => {
-        //                             console.log(res);
-        //                         })
-        //                         .catch((err) => {
-        //                             console.log(err);
-        //                         });
-        //                     await instance
-        //                         .put('/order/customer/update', {
-        //                             id: item.id,
-        //                             driver_id: id,
-        //                         })
-        //                         .then((res) => {
-        //                             if (res.data.err == 0) {
-        //                                 setLoading(false);
-        //                                 setStatus(true);
-        //                                 setSelectedID(item.id);
-        //                                 setTake(true);
-        //                                 item.socket_id = data.socket_id;
-        //                                 navigation.navigate(
-        //                                     NameScreen.TAKE_ORDER_SCREEN,
-        //                                     {
-        //                                         item,
-        //                                     }
-        //                                 );
-        //                             }
-        //                         })
-        //                         .catch((err) => {
-        //                             console.log(err);
-        //                         });
-        //                 }
-        //             } else {
-        //                 console.log('failure');
-        //             }
-        //         })
-        //         .catch((err) => {
-        //             console.log(err);
-        //         });
-        // }
-        navigation.navigate(NameScreen.TAKE_ORDER_SCREEN, {
-            item,
-        });
+        if (isOrderSelected) {
+            setShowModal(true);
+            setErrorMessage(
+                'Bạn đang có đơn hàng chưa hoàn thành. Vui lòng hoàn thành đơn hàng hiện tại để nhận đơn hàng khác!'
+            );
+            return;
+        }
+        setLoading(true);
+        const database = getDatabase();
+        const dataRef = ref(database, `order/${item.key}/driver`);
+        const updateData = {
+            id: 1,
+            status: 1,
+        };
+        update(dataRef, updateData)
+            .then(() => {
+                setLoading(false);
+                navigation.navigate(NameScreen.TAKE_ORDER_SCREEN, {
+                    item,
+                });
+            })
+            .catch((e) => {
+                setLoading(false);
+                setShowModal(true);
+                setErrorMessage(
+                    'Nhận đơn hàng thất bại. Vui lòng liên hệ với bộ phận chăm sóc khách hàng hoặc thử lại sau ít phút!'
+                );
+                console.log('err: ', e);
+            });
     };
 
     const onHideModal = () => {
@@ -164,18 +112,18 @@ const OrderInfo = ({ route, navigation }) => {
                             title="người gửi"
                             iconColor={'red'}
                             iconName={'location-pin'}
-                            address={item.sender_address}
-                            name={item.sender_name}
-                            phone={item.sender_phone}
+                            address={item.senderInfo.address}
+                            name={item.senderInfo.name}
+                            phone={item.senderInfo.phone}
                             onPress={() => {}}
                         />
                         <InfoOrder
                             title="người nhận"
                             iconColor={'#2299ba'}
                             iconName={'my-location'}
-                            address={item.sender_address}
-                            name={item.sender_name}
-                            phone={item.sender_phone}
+                            address={item.receiverInfo.address}
+                            name={item.receiverInfo.name}
+                            phone={item.receiverInfo.phone}
                             onPress={() => {}}
                         />
                     </View>

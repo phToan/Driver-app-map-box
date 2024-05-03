@@ -1,41 +1,49 @@
 {
-  "expo": {
-    "name": "map-box",
-    "slug": "map-box",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.daple0803.mapbox"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.daple0803.mapbox"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsVersion": "11.1.0",
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoicGh0b2FuIiwiYSI6ImNsdWM3bWV1ajE0YmIya25pMWdmNzZzb2IifQ.vqscx8T6AutVDhBOmUDlrg"
-        }
-      ]
-    ]
-  }
+    "expo": {
+        "name": "map-box",
+        "slug": "map-box",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "light",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "assetBundlePatterns": ["**/*"],
+        "ios": {
+            "supportsTablet": true,
+            "googleServicesFile": "./GoogleService-Info.plist",
+            "bundleIdentifier": "com.daple0803.mapbox"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "package": "com.daple0803.mapbox"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": [
+            [
+                "@rnmapbox/maps",
+                {
+                    "RNMapboxMapsVersion": "11.1.0",
+                    "RNMapboxMapsDownloadToken": "sk.eyJ1IjoicGh0b2FuIiwiYSI6ImNsdWM3bWV1ajE0YmIya25pMWdmNzZzb2IifQ.vqscx8T6AutVDhBOmUDlrg"
+                }
+            ],
+            "@react-native-firebase/app",
+            [
+                "expo-build-properties",
+                {
+                    "ios": {
+                        "useFrameworks": "static"
+                    }
+                }
+            ]
+        ]
+    }
 }

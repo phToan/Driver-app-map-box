@@ -1,14 +1,29 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { View, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
 import { RocketIcon, FlashIcon } from '../../../assets/images';
 import { MaterialIcons } from '../../../assets/icon';
 import color from '../../../assets/color';
-import { DotCircleIcon } from '../../../assets/Icons';
+import { DotCircleIcon, TruckIcon } from '../../../assets/Icons';
+import { TextFont } from '../../../Components/Text';
 
-export const OrderItem = memo(({ item, onPress }) => {
+export const OrderItem = memo(({ item, onPress, style, lineStyle }) => {
+    let statusTitle = '';
+    switch (item.driver.status) {
+        case 1: {
+            statusTitle = 'Đang lấy hàng';
+            break;
+        }
+        case 2: {
+            statusTitle = 'Đang giao hàng';
+            break;
+        }
+        default: {
+            statusTitle = '';
+        }
+    }
     return (
         <TouchableOpacity
-            style={styles.body}
+            style={[styles.body, style]}
             onPress={() => onPress(item)}
             activeOpacity={0.9}
         >
@@ -24,10 +39,17 @@ export const OrderItem = memo(({ item, onPress }) => {
                     style={{ color: 'green' }}
                 />
                 <Text style={{ marginLeft: 10, fontSize: 15 }}>
-                    {item.sender_address}
+                    {item.senderInfo.address}
                 </Text>
             </View>
-            <View style={styles.line} />
+            <View
+                style={[
+                    styles.line,
+                    {
+                        top: lineStyle ? lineStyle.top : '22%',
+                    },
+                ]}
+            />
             <View
                 style={{
                     flexDirection: 'row',
@@ -41,35 +63,55 @@ export const OrderItem = memo(({ item, onPress }) => {
                     style={{ color: 'red' }}
                 />
                 <Text style={{ marginLeft: 10, fontSize: 15 }}>
-                    {item.receiver_address}
+                    {item.receiverInfo.address}
                 </Text>
             </View>
-
-            <View style={styles.under}>
-                <View style={{ flex: 1, marginLeft: 20 }}>
-                    {item.infor_shipping ? (
-                        <Image source={RocketIcon} style={styles.image} />
-                    ) : (
-                        <Image source={FlashIcon} style={styles.image} />
-                    )}
-                </View>
-                <View style={{ flex: 5 }}>
-                    <Text style={styles.t_shipping}>
-                        {item.infor_shipping ? 'Hỏa Tốc' : 'Tiết kiệm'}
-                    </Text>
-                    <Text style={styles.t_money}>
-                        <Text style={styles.t_initmoney}>đ</Text> {item.price} -
-                        <Text style={{ color: 'blue' }}>
-                            - {item.distance} km
+            <View>
+                <View style={styles.under}>
+                    <View style={{ flex: 1, marginLeft: 20 }}>
+                        {item.info_shipping ? (
+                            <Image source={RocketIcon} style={styles.image} />
+                        ) : (
+                            <Image source={FlashIcon} style={styles.image} />
+                        )}
+                    </View>
+                    <View style={{ flex: 5 }}>
+                        <Text style={styles.t_shipping}>
+                            {item.info_shipping ? 'Hỏa Tốc' : 'Tiết kiệm'}
                         </Text>
-                    </Text>
+                        <Text style={styles.t_money}>
+                            <Text style={styles.t_initmoney}>đ</Text>{' '}
+                            {item.price} -
+                            <Text style={{ color: 'blue' }}>
+                                - {item.distance} km
+                            </Text>
+                        </Text>
+                    </View>
                 </View>
+                {style && (
+                    <View style={styles.footer}>
+                        <TruckIcon height={40} width={40} color={'green'} />
+                        <TextFont
+                            title={statusTitle}
+                            fs={16}
+                            color={color.StatusGreen}
+                            fw={'bold'}
+                        />
+                    </View>
+                )}
             </View>
         </TouchableOpacity>
     );
 });
 
 const styles = StyleSheet.create({
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 10,
+        paddingHorizontal: 10,
+        gap: 10,
+    },
     image: {
         height: 50,
         width: 50,
@@ -109,8 +151,7 @@ const styles = StyleSheet.create({
         borderLeftWidth: 1,
         height: 30,
         position: 'absolute',
-        top: '22%',
-        left: '10.1%',
         borderColor: '#bec0c2',
+        left: '10.1%',
     },
 });

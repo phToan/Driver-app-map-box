@@ -1,6 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, SafeAreaView, Text, ScrollView, Linking } from 'react-native';
-import AppContext from '../../Context';
 import { styles } from './styles';
 import axios from 'axios';
 import moment from 'moment-timezone';
@@ -14,32 +13,34 @@ import { NameScreen } from '../../Constants/nameScreen';
 import LoadingModal from '../../Components/LoadingModal';
 import NotificationModal from '../../Components/notificationModal';
 import color from '../../assets/color';
-// import * as Location from 'expo-location';
+import Geolocation from '@react-native-community/geolocation';
+import { update, getDatabase, ref } from 'firebase/database';
+import AppContext from '../../Context';
 
 const OrderTaken = ({ navigation, route }) => {
+    const { setIsOrderSelected } = useContext(AppContext);
     const API_KEY = 'uGwlo6yHxKnoqSPqp0Enla92wOd1YpmpbYrEy3GK';
-    const { socket, setStatus, setScreen, setSelectedID, setTake, setDisplay } =
-        useContext(AppContext);
     const [latitude, setLatitude] = useState(null);
     const [longitude, setLongitude] = useState(null);
     const [region, setRegion] = useState(null);
     const [loading, setLoading] = useState(false);
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
+    const database = getDatabase();
+    const item = route?.params.item;
+    const dataRef = ref(database, `order/${item.key}/driver`);
     const onHide = () => {
         setVisible(false);
     };
     const currentTime = moment()
         .tz('Asia/Bangkok')
         .format('YYYY-MM-DD HH:mm:ss');
-    const item = route?.params.item;
     const data = {
         id_Order: item.id,
         takeAt: currentTime,
     };
     const onClickReturn = () => {
         navigation.navigate(NameScreen.BOTTOM_TAB);
-        setScreen(1);
     };
     const onClickDetail = () => {
         navigation.navigate(NameScreen.WATCH_DETAIL_SCREEN, {
@@ -53,65 +54,50 @@ const OrderTaken = ({ navigation, route }) => {
 
     const onclickDel = async () => {
         setLoading(true);
-        await instance
-            .put('/order/customer/update', {
-                id: item.id,
-                driver_id: 0,
+        const updateData = {
+            id: 0,
+            status: 0,
+        };
+        update(dataRef, updateData)
+            .then(() => {
+                setIsOrderSelected(false);
+                setLoading(false);
+                navigation.goBack();
             })
-            .then(async (res) => {
-                console.log(res.data);
-                if (res.data.err == 0) {
-                    setStatus(false);
-                    setScreen(0);
-                    setSelectedID(null);
-                    setTake(false);
-                }
-            })
-            .catch((err) => {
-                console.log(err);
-            });
-
-        await instance
-            .put('/order/driver/update', {
-                id_Order: item.id,
-                deleteAt: currentTime,
-            })
-            .then((res) => {
-                if (res.data.err == 0) {
-                    setLoading(false);
-                    setDisplay(false);
-                    navigation.navigate(NameScreen.BOTTOM_TAB);
-                } else {
-                    console.log('failure');
-                }
-            })
-            .catch((err) => {
-                console.log('err: ', err);
+            .catch((e) => {
+                setLoading(false);
+                setVisible(true);
+                setMessage(
+                    'Huỷ đơn hàng thất bại. Vui lòng liên hệ với bộ phận chăm sóc khách hàng hoặc thử lại sau ít phút!'
+                );
+                console.log('err: ', e);
             });
     };
 
     const onClickSuccess = async () => {
-        navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
-        // setLoading(true);
-        // await instance
-        //     .put('/driver/update', data)
-        //     .then((res) => {
-        //         console.log(res);
-        //         if (res.data.err == 0) {
-        //             setLoading(false);
-        //             navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
-        //         } else {
-        //             console.log('failure');
-        //         }
-        //     })
-        //     .catch((err) => {
-        //         console.log(err);
-        //     });
+        setLoading(true);
+        const updateData = {
+            id: 1,
+            status: 2,
+        };
+        update(dataRef, updateData)
+            .then(() => {
+                setLoading(false);
+                navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
+            })
+            .catch((e) => {
+                setLoading(false);
+                setVisible(true);
+                setMessage(
+                    'Xác nhận lấy hàng không thành công. Vui lòng liên hệ với bộ phận chăm sóc khách hàng hoặc thử lại sau ít phút!'
+                );
+                console.log('err: ', e);
+            });
     };
 
     const getLocationCoordinates = async () => {
         try {
-            const addresses = item.sender_address;
+            const addresses = item.senderInfo.address;
             // console.log(addresses)
             const response = await axios.get(
                 `https://rsapi.goong.io/Geocode?address=${addresses}&api_key=${API_KEY}`
@@ -122,7 +108,6 @@ const OrderTaken = ({ navigation, route }) => {
                 const location = data.results[0].geometry.location;
                 setLatitude(location.lat);
                 setLongitude(location.lng);
-                console.log(`llll: ${location.lat},${location.lng}`);
                 setRegion({
                     latitude: location.lat,
                     longitude: location.lng,
@@ -135,22 +120,19 @@ const OrderTaken = ({ navigation, route }) => {
         }
     };
 
-    // const getCurrentLocation = async () => {
-    //     Geolocation.getCurrentPosition(
-    //         (position) => {
-    //             const { latitude, longitude } = position.coords;
-    //             console.log('latitude: ', latitude);
-    //         }
-    //         // (error) => {
-    //         //     setErrorMsg(error.message);
-    //         // },
-    //         // { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-    //     );
-    // };
+    const getCurrentLocation = async () => {
+        try {
+            await Geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude } = position.coords;
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     useEffect(() => {
         getLocationCoordinates();
-        // getCurrentLocation();
+        getCurrentLocation();
     }, []);
 
     return (
@@ -178,7 +160,7 @@ const OrderTaken = ({ navigation, route }) => {
                     </View>
                     <View style={styles.address}>
                         <Text style={styles.t_address}>
-                            {item.sender_address}
+                            {item.senderInfo.address}
                         </Text>
                         <Button
                             colorBackground={'#ff6833'}
@@ -187,7 +169,7 @@ const OrderTaken = ({ navigation, route }) => {
                             onPress={openGoogleMaps}
                         />
                     </View>
-                    {item.sender_detail_address !== '' && (
+                    {item.senderInfo.subAddress !== '' && (
                         <View style={styles.detailAddressArea}>
                             <Text style={styles.labelLocate}>
                                 Địa chỉ chi tiết:{' '}
@@ -198,13 +180,13 @@ const OrderTaken = ({ navigation, route }) => {
                                     ellipsizeMode="tail"
                                     style={{ color: 'black', fontSize: 16 }}
                                 >
-                                    {item.sender_detail_address}
+                                    {item.senderInfo.subAddress}
                                 </Text>
                             </View>
                         </View>
                     )}
                     <InfoOrderUser
-                        name={item.sender_name}
+                        name={item.senderInfo.name}
                         label={'người gửi'}
                     />
                     <View style={{ marginHorizontal: '20%', gap: 10 }}>

@@ -16,13 +16,65 @@ import { OrderItem } from './components/orderItem';
 import color from '../../assets/color';
 import HeaderBottomTab from '../../Components/HeaderBottomTab';
 import { NameScreen } from '../../Constants/nameScreen';
+import { initOrder } from '../../Api/firebase';
+import NotificationModal from '../../Components/notificationModal';
+import {
+    getDatabase,
+    onValue,
+    off,
+    ref,
+    onChildAdded,
+    onChildRemoved,
+} from 'firebase/database';
 
 const Home = ({ navigation }) => {
-    const { lightDot, screen } = useContext(AppContext);
+    const [visible, setVisible] = useState(false);
+    const [message, setMessage] = useState('');
+    const { lightDot, setIsOrderSelected } = useContext(AppContext);
     const [data, setData] = useState([]);
     const [order, setOrder] = useState({});
     const [id, setID] = useState('');
     const [fetch, setFetch] = useState(false);
+    const [orderSelected, setOrderSelected] = useState([]);
+
+    useEffect(() => {
+        if (lightDot) {
+            const database = getDatabase();
+            const dataRef = ref(database, 'order');
+            const onDataChange = (snapshot) => {
+                setOrderSelected([]);
+                const newData = snapshot.val();
+                const arr = Object.values(newData);
+                const arrItem = arr.filter(
+                    (item) => item?.driver?.id === 0 || item?.driver?.id === 1
+                );
+                let arrData = [];
+                const keys = Object.keys(snapshot.val());
+                arrItem.map((e, index) => {
+                    e.key = keys[index];
+                    arrData.unshift(e);
+                    e.driver.status > 0 &&
+                        e.driver.id === 1 &&
+                        (setOrderSelected((prev) => [...prev, e]),
+                        setIsOrderSelected(true),
+                        (arrData = arrData.filter((item) => item.id !== e.id)));
+                });
+                setData(arrData);
+            };
+            const unsubscribe = onValue(dataRef, onDataChange);
+
+            // Lắng nghe sự kiện khi một trường được xóa đi
+            const onRemoved = onChildRemoved(dataRef, (snapshot) => {
+                const removedFieldId = snapshot.key;
+                console.log(`Trường với ID ${removedFieldId} đã bị xóa.`);
+            });
+            return () => {
+                off(dataRef, onDataChange);
+                unsubscribe();
+                onRemoved();
+            };
+        }
+    }, [lightDot]);
 
     const fetchData = async () => {
         try {
@@ -36,17 +88,17 @@ const Home = ({ navigation }) => {
             console.error(error);
         }
     };
-    useEffect(() => {
-        if (lightDot) {
-            setFetch(true);
-        }
-    }, [lightDot]);
-    useEffect(() => {
-        if (fetch) {
-            fetchData();
-            setFetch(false);
-        }
-    }, [fetch]);
+    // useEffect(() => {
+    //     if (lightDot) {
+    //         setFetch(true);
+    //     }
+    // }, [lightDot]);
+    // useEffect(() => {
+    //     if (fetch) {
+    //         fetchData();
+    //         setFetch(false);
+    //     }
+    // }, [fetch]);
 
     const payload = {
         status: 1,
@@ -89,14 +141,16 @@ const Home = ({ navigation }) => {
     // }, []);
 
     const getItem = (item) => {
-        navigation.navigate(NameScreen.ORDER_INFO_SCREEN, { item });
-    };
-
-    const selectOrder = (item) => {
-        if (screen == 1) {
-            navigation.navigate(NameScreen.TAKE_ORDER_SCREEN, { item });
-        } else {
-            navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
+        if (item.driver.id === 0) {
+            navigation.navigate(NameScreen.ORDER_INFO_SCREEN, { item });
+            return;
+        }
+        if (item.driver.id === 1) {
+            if (item.driver.status === 1) {
+                navigation.navigate(NameScreen.TAKE_ORDER_SCREEN, { item });
+            } else {
+                navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
+            }
         }
     };
 
@@ -116,20 +170,43 @@ const Home = ({ navigation }) => {
                 },
             ]}
         >
-            <HeaderBottomTab />
-
+            <HeaderBottomTab setMessage={setMessage} setVisible={setVisible} />
+            <NotificationModal
+                Message={message}
+                Visible={visible}
+                onHide={() => setVisible(false)}
+            />
             {lightDot ? (
-                <FlatList
-                    style={{ flex: 1, padding: 10 }}
-                    data={data}
-                    renderItem={({ item }) => (
-                        <OrderItem item={item} onPress={() => getItem(item)} />
+                <>
+                    {orderSelected.length > 0 && (
+                        <View style={styles.itemSelected}>
+                            <OrderItem
+                                item={orderSelected[0]}
+                                onPress={() => getItem(orderSelected[0])}
+                                style={{
+                                    backgroundColor: color.BackgroundGreen,
+                                }}
+                                lineStyle={{
+                                    top: '16%',
+                                }}
+                            />
+                        </View>
                     )}
-                    keyExtractor={(item) => item.id}
-                    ListEmptyComponent={ListEmptyComponent}
-                    initialNumToRender={5}
-                    maxToRenderPerBatch={5}
-                />
+                    <FlatList
+                        style={{ flex: 1, padding: 10 }}
+                        data={data}
+                        renderItem={({ item }) => (
+                            <OrderItem
+                                item={item}
+                                onPress={() => getItem(item)}
+                            />
+                        )}
+                        keyExtractor={(item) => item.id}
+                        ListEmptyComponent={ListEmptyComponent}
+                        initialNumToRender={5}
+                        maxToRenderPerBatch={5}
+                    />
+                </>
             ) : (
                 <View style={styles._not_list}>
                     <Image source={BlankDataImage} style={styles.Image} />

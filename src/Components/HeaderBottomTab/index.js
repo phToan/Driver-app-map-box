@@ -4,8 +4,19 @@ import React, { memo, useContext } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { DotIcon, RightICon } from '../../assets/Icons';
 
-const HeaderBottomTab = memo(() => {
-    const { lightDot, toggleLightDot } = useContext(AppContext);
+const HeaderBottomTab = memo(({ setMessage, setVisible }) => {
+    const { lightDot, toggleLightDot, isOrderSelected } =
+        useContext(AppContext);
+    const handleLightDot = () => {
+        if (isOrderSelected) {
+            setVisible(true);
+            setMessage(
+                'Bạn đang có đơn hàng chưa hoàn thành. Vui lòng hoàn thành đơn hàng hiện tại và thay đổi trạng thái hoạt động!'
+            );
+            return;
+        }
+        toggleLightDot();
+    };
     return (
         <View
             style={{
@@ -27,7 +38,7 @@ const HeaderBottomTab = memo(() => {
                     justifyContent: 'space-between',
                     paddingHorizontal: 10,
                 }}
-                onPress={toggleLightDot}
+                onPress={handleLightDot}
             >
                 <DotIcon
                     height={20}

@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import color from '../../assets/color';
 export const styles = StyleSheet.create({
     componentBlank: {
         marginTop: '50%',
@@ -16,6 +17,10 @@ export const styles = StyleSheet.create({
     component: {
         flex: 1,
         marginBottom: 5,
+    },
+    itemSelected: {
+        padding: 10,
+        // backgroundColor: color.BackgroundGreen,
     },
     Image: {
         width: '70%',

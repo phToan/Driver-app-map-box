@@ -39,22 +39,21 @@ const WatchDetailScreen = ({ route, navigation }) => {
                             title="người gửi"
                             iconColor={'red'}
                             iconName={'location-pin'}
-                            address={item.sender_address}
-                            name={item.sender_name}
-                            phone={item.sender_phone}
+                            address={item?.senderInfo?.address}
+                            name={item.senderInfo.name}
+                            phone={item.senderInfo.phone}
                             onPress={() => {}}
                         />
                         <InfoOrder
                             title="người nhận"
                             iconColor={'#2299ba'}
                             iconName={'my-location'}
-                            address={item.sender_address}
-                            name={item.sender_name}
-                            phone={item.sender_phone}
+                            address={item.receiverInfo.address}
+                            name={item.receiverInfo.name}
+                            phone={item.receiverInfo.phone}
                             onPress={() => {}}
                         />
                     </View>
-
                     <OrderSize
                         size={item.size_item}
                         detail={item.detail_item}

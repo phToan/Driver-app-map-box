@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, SafeAreaView, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -12,7 +12,6 @@ import { DobField } from '../../../Components/TextInputField/dobField';
 import { ButtonConfirm } from '../../../Components/ButtonConfirm';
 
 const EditProfile = ({ route }) => {
-    const { setUpdate } = useContext(AppContext);
     const navigation = useNavigation();
     const [nameUser, setNameUser] = useState(route?.params.data.name);
     const [dateOfBirth, setDateOfBirth] = useState(route.params.data.dob);
@@ -94,7 +93,6 @@ const EditProfile = ({ route }) => {
 
     const onHideModal = () => {
         if (isSuccess) {
-            setUpdate(true);
             setIsSuccess(false);
             setTimeout(() => {
                 setShowModal(false);

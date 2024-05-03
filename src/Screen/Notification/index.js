@@ -14,6 +14,7 @@ import { ItemNotice } from './components/itemNotice';
 import { ItemSeparator } from './components/itemSeparator';
 import { ItemStatusOrder } from './components/itemStatusOrder';
 import { PromotionIcon } from '../../assets/Icons';
+import NotificationModal from '../../Components/notificationModal';
 
 const dataPromotion = [
     { id: 1, label: 'Ưu đãi đến 20.000đ', content: '' },
@@ -37,16 +38,23 @@ const dataStatusOrder = [
 
 const NotificationScreen = () => {
     const [listItems, setListItems] = useState(dataStatusOrder);
+    const [visible, setVisible] = useState(false);
+    const [message, setMessage] = useState('');
     const getItem = (item) => {
         alert('ID: ' + item.id + ' value:  ' + item.value);
     };
     return (
         <View style={styles.container}>
-            <HeaderBottomTab />
+            <NotificationModal
+                Message={message}
+                Visible={visible}
+                onHide={() => setVisible(false)}
+            />
+            <HeaderBottomTab setMessage={setMessage} setVisible={setVisible} />
             <View style={styles.header}>
                 <ItemNotice
                     onPress={() => {}}
-                    id={1} 
+                    id={1}
                     label={'Khuyến mãi'}
                     color={'green'}
                 />

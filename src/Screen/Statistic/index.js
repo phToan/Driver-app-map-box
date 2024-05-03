@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { Item } from './components/item';
 import color from '../../assets/color';
 import { TextFont } from '../../Components/Text';
+import NotificationModal from '../../Components/notificationModal';
 
 const Statistics = () => {
     const isFocus = useIsFocused();
@@ -25,6 +26,8 @@ const Statistics = () => {
     const [completeOrder, setCompleteOrder] = useState(0);
     const [income, setIncome] = useState(0);
     const [date, setDate] = useState('');
+    const [visible, setVisible] = useState(false);
+    const [message, setMessage] = useState('');
 
     const fetchData = async (Day) => {
         await instance
@@ -75,7 +78,12 @@ const Statistics = () => {
     };
     return (
         <View style={{ flex: 1, backgroundColor: 'white' }}>
-            <HeaderBottomTab />
+            <NotificationModal
+                Message={message}
+                Visible={visible}
+                onHide={() => setVisible(false)}
+            />
+            <HeaderBottomTab setMessage={setMessage} setVisible={setVisible} />
             <View style={{ padding: 10 }}>
                 <TimeReminder
                     currentDay={selectDate}

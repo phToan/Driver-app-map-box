@@ -1,7 +1,6 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, SafeAreaView, Text, ScrollView, Linking } from 'react-native';
 import { styles } from './styles';
-import AppContext from '../../Context';
 import axios from 'axios';
 import moment from 'moment-timezone';
 import { Map } from '../../Components/MapView';
@@ -12,8 +11,6 @@ import { NameScreen } from '../../Constants/nameScreen';
 
 const OrderDelivery = ({ navigation, route }) => {
     const API_KEY = 'uGwlo6yHxKnoqSPqp0Enla92wOd1YpmpbYrEy3GK';
-    const { socket, setStatus, setScreen, setSelectedID, setTake, setDisplay } =
-        useContext(AppContext);
     const [latitude, setLatitude] = useState(null);
     const [longitude, setLongitude] = useState(null);
     const [region, setRegion] = useState(null);
@@ -23,15 +20,10 @@ const OrderDelivery = ({ navigation, route }) => {
         .tz('Asia/Bangkok')
         .format('YYYY-MM-DD HH:mm:ss');
     const onclickDel = () => {
-        setStatus(false);
-        setScreen(0);
-        setSelectedID(null);
         navigation.navigate('Đơn hàng');
     };
     const onClickReturn = () => {
-        // navigation.navigate('Đơn hàng');
-        // setScreen(2);
-        navigation.goBack();
+        navigation.navigate(NameScreen.BOTTOM_TAB);
     };
     const data = {
         id_Order: item.id,
@@ -40,66 +32,17 @@ const OrderDelivery = ({ navigation, route }) => {
     };
 
     const openGoogleMaps = () => {
-        const destinationAddress = item.receiver_address;
-        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destinationAddress}`;
-
-        Linking.openURL(googleMapsUrl)
-            .then((result) => {
-                if (result) {
-                    console.log('Successfully opened Google Maps');
-                } else {
-                    console.log('Failed to open Google Maps');
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+        navigation.navigate(NameScreen.DIRECTION_MAP_SCREEN);
     };
 
-    const onClickSuccess = async () => {
-        if (socket) {
-            await axios
-                .get('https://delivery-server-s54c.onrender.com/socket', {
-                    params: {
-                        user_id: item.customer_id,
-                        type: 0,
-                    },
-                })
-                .then((res) => {
-                    if (res.data.err == 0) {
-                        socket.emit('deliverySuccess', {
-                            socket_id: res.data.data.socket_id,
-                            id: item.id,
-                        });
-                    }
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        }
-        await axios
-            .put(
-                'https://delivery-server-s54c.onrender.com/order/driver/update',
-                data
-            )
-            .then((res) => {
-                console.log(res);
-                if (res.data.err == 0) {
-                    setTake(false);
-                    setDisplay(false);
-                    setStatus(false);
-                    navigation.navigate('Đơn hàng');
-                }
-            })
-            .catch((err) => {
-                console.log(err);
-            });
-    };
+    const onClickSuccess = async () => {};
     const onClickPhone = async () => {
-        const isAvailable = await Linking.canOpenURL(`tel:${item.phone}`);
+        const isAvailable = await Linking.canOpenURL(
+            `tel:${item.receiverInfo.phone}`
+        );
         if (isAvailable) {
             // Mở ứng dụng gọi điện thoại
-            Linking.openURL(`tel:${item.phone}`);
+            Linking.openURL(`tel:${item.receiverInfo.phone}`);
         } else {
             console.log(
                 'Ứng dụng gọi điện thoại không khả dụng trên thiết bị.'
@@ -112,7 +55,7 @@ const OrderDelivery = ({ navigation, route }) => {
     useEffect(() => {
         const getLocationCoordinates = async () => {
             try {
-                const addresses = item.receiver_address;
+                const addresses = item.receiverInfo.address;
                 const response = await axios.get(
                     `https://rsapi.goong.io/Geocode?address=${addresses}&api_key=${API_KEY}`
                 );
@@ -151,7 +94,7 @@ const OrderDelivery = ({ navigation, route }) => {
                     </View>
                     <View style={styles.address}>
                         <Text style={styles.t_address}>
-                            {item.receiver_address}
+                            {item.receiverInfo.address}
                         </Text>
                         <Button
                             colorBackground={'#ff6833'}
@@ -161,19 +104,19 @@ const OrderDelivery = ({ navigation, route }) => {
                         />
                     </View>
 
-                    {item.sender_detail_address !== '' && (
+                    {item.receiverInfo.subAddress !== '' && (
                         <View>
                             <Text style={styles.labelAddress}>
                                 Địa chỉ chi tiết
                             </Text>
                             <Text style={{ color: 'silver' }}>
-                                {item.receiver_detail_address}
+                                {item.receiverInfo.subAddress}
                             </Text>
                         </View>
                     )}
                     <InfoOrderUser
                         label={'người nhận'}
-                        name={item.receiver_name}
+                        name={item.receiverInfo.name}
                     />
                     <View style={styles.button}>
                         <Button

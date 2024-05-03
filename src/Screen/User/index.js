@@ -14,6 +14,7 @@ import { GirlIcon, ManIcon } from '../../assets/images';
 import { TextFont } from '../../Components/Text';
 import { OptionItem } from './components/optionItem';
 import { NameScreen } from '../../Constants/nameScreen';
+import NotificationModal from '../../Components/notificationModal';
 
 const Others = () => {
     const navigation = useNavigation();
@@ -21,6 +22,8 @@ const Others = () => {
     const [phone, setPhone] = useState('');
     const [id, setID] = useState('');
     const [gender, setGender] = useState(true);
+    const [visible, setVisible] = useState(false);
+    const [message, setMessage] = useState('');
     useEffect(() => {
         const getData = async () => {
             setName(await AsyncStorage.getItem('name'));
@@ -42,7 +45,12 @@ const Others = () => {
     };
     return (
         <View style={styles.container}>
-            <HeaderBottomTab />
+            <NotificationModal
+                Message={message}
+                Visible={visible}
+                onHide={() => setVisible(false)}
+            />
+            <HeaderBottomTab setMessage={setMessage} setVisible={setVisible} />
             <TouchableOpacity
                 style={styles.header}
                 onPress={onClickUserAccount}

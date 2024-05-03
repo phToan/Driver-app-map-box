@@ -10,9 +10,6 @@ import {
     ToastAndroid,
 } from 'react-native';
 import ToastManager, { Toast } from 'toastify-react-native';
-
-// Khi bạn muốn hiển thị một thông báo
-
 import React, { useState } from 'react';
 import { Entypo, FontAwesome } from '../../assets/icon';
 import NotificationModal from '../../Components/notificationModal';
@@ -25,8 +22,12 @@ import { getData } from '../../Api/api_query';
 import { instance } from '../../Api/instance';
 import { styles } from './styles';
 import LoadingModal from '../../Components/LoadingModal';
+import Geolocation from '@react-native-community/geolocation';
 
 const Login = ({ navigation }) => {
+    Geolocation.getCurrentPosition((info) => {
+        console.log('coord: ', info.coords);
+    });
     const [hidePass, setHidePass] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
