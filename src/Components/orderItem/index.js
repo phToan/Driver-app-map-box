@@ -25,7 +25,7 @@ export const OrderItem = memo(({ item, onPress, index }) => {
                     style={{ color: 'green' }}
                 />
                 <Text style={{ marginLeft: 10, fontSize: 15 }}>
-                    {item.orderData.sender_address}
+                    {item?.orderData?.sender_address}
                 </Text>
             </View>
             <View style={styles.line} />
@@ -43,13 +43,13 @@ export const OrderItem = memo(({ item, onPress, index }) => {
                     style={{ color: 'red' }}
                 />
                 <Text style={{ marginLeft: 10, fontSize: 15 }}>
-                    {item.orderData.receiver_address}
+                    {item?.orderData?.receiver_address}
                 </Text>
             </View>
 
             <View style={styles.under}>
                 <View style={{ flex: 1, marginLeft: 20 }}>
-                    {item.orderData.infor_shipping ? (
+                    {item?.orderData?.infor_shipping ? (
                         <Image source={RocketIcon} style={styles.image} />
                     ) : (
                         <Image source={FlashIcon} style={styles.image} />
@@ -57,15 +57,15 @@ export const OrderItem = memo(({ item, onPress, index }) => {
                 </View>
                 <View style={{ flex: 5 }}>
                     <Text style={styles.t_shipping}>
-                        {item.orderData.infor_shipping
+                        {item?.orderData?.infor_shipping
                             ? 'Hỏa Tốc'
                             : 'Tiết kiệm'}
                     </Text>
                     <Text style={styles.t_money}>
                         <Text style={styles.t_initmoney}>đ</Text>{' '}
-                        {item.orderData.price} -
+                        {item?.orderData?.price} -
                         <Text style={{ color: 'blue' }}>
-                            - {item.orderData.distance} km
+                            - {item?.orderData?.distance} km
                         </Text>
                     </Text>
                 </View>

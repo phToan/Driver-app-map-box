@@ -6,6 +6,7 @@ import { OrderTransport } from '../../Components/orderTransport';
 import { InfoOrder } from '../../Components/addressOrder';
 import { DisplayDistance } from '../../Components/displayDistance';
 import { OrderSize } from '../../Components/orderSize';
+import { TextFont } from '../../Components/Text';
 
 const WatchDetailScreen = ({ route, navigation }) => {
     const item = route.params?.item;
@@ -58,6 +59,41 @@ const WatchDetailScreen = ({ route, navigation }) => {
                         size={item.size_item}
                         detail={item.detail_item}
                     />
+                    {item.COD && (
+                        <View style={styles.cod}>
+                            <TextFont
+                                title={'Thu hộ (COD):'}
+                                fs={16}
+                                fw={'500'}
+                            />
+                            <TextFont
+                                title={`${item.COD}đ`}
+                                fs={16}
+                                fw={'500'}
+                            />
+                        </View>
+                    )}
+                    {item.transportFee && (
+                        <View
+                            style={[
+                                styles.fee,
+                                {
+                                    marginTop: item.COD ? 0 : 40,
+                                },
+                            ]}
+                        >
+                            <TextFont
+                                title={'Phí vận chuyển:'}
+                                fs={16}
+                                fw={'500'}
+                            />
+                            <TextFont
+                                title={`${item.transportFee}đ`}
+                                fs={16}
+                                fw={'500'}
+                            />
+                        </View>
+                    )}
                     <View style={styles.price}>
                         <Text style={{ fontSize: 16, fontWeight: '500' }}>
                             Thành tiền:

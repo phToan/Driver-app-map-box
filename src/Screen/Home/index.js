@@ -26,16 +26,31 @@ import {
     onChildAdded,
     onChildRemoved,
 } from 'firebase/database';
+import { useIsFocused } from '@react-navigation/native';
 
 const Home = ({ navigation }) => {
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
-    const { lightDot, setIsOrderSelected } = useContext(AppContext);
+    const {
+        lightDot,
+        setIsOrderSelected,
+        setFocusScreen,
+        keySelected,
+        setVisiblePopup,
+        setKeySelected,
+    } = useContext(AppContext);
     const [data, setData] = useState([]);
     const [order, setOrder] = useState({});
     const [id, setID] = useState('');
     const [fetch, setFetch] = useState(false);
     const [orderSelected, setOrderSelected] = useState([]);
+    const isFocused = useIsFocused();
+
+    useEffect(() => {
+        if (isFocused) {
+            setFocusScreen('HomeScreen');
+        }
+    }, [isFocused]);
 
     useEffect(() => {
         if (lightDot) {
@@ -43,13 +58,13 @@ const Home = ({ navigation }) => {
             const dataRef = ref(database, 'order');
             const onDataChange = (snapshot) => {
                 setOrderSelected([]);
-                const newData = snapshot.val();
+                const newData = snapshot.val() ?? [];
                 const arr = Object.values(newData);
                 const arrItem = arr.filter(
                     (item) => item?.driver?.id === 0 || item?.driver?.id === 1
                 );
                 let arrData = [];
-                const keys = Object.keys(snapshot.val());
+                const keys = Object.keys(snapshot.val() ?? []);
                 arrItem.map((e, index) => {
                     e.key = keys[index];
                     arrData.unshift(e);
@@ -57,6 +72,8 @@ const Home = ({ navigation }) => {
                         e.driver.id === 1 &&
                         (setOrderSelected((prev) => [...prev, e]),
                         setIsOrderSelected(true),
+                        console.log('e.key: ', e.key),
+                        setKeySelected(e.key),
                         (arrData = arrData.filter((item) => item.id !== e.id)));
                 });
                 setData(arrData);
@@ -66,7 +83,11 @@ const Home = ({ navigation }) => {
             // Lắng nghe sự kiện khi một trường được xóa đi
             const onRemoved = onChildRemoved(dataRef, (snapshot) => {
                 const removedFieldId = snapshot.key;
-                console.log(`Trường với ID ${removedFieldId} đã bị xóa.`);
+                if (keySelected === removedFieldId) {
+                    setVisiblePopup(true);
+                    setIsOrderSelected(false);
+                    console.log('abc');
+                }
             });
             return () => {
                 off(dataRef, onDataChange);
@@ -75,7 +96,7 @@ const Home = ({ navigation }) => {
             };
         }
     }, [lightDot]);
-
+    console.log(keySelected);
     const fetchData = async () => {
         try {
             const response = await instance.get('/order/customer', {

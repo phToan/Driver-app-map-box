@@ -8,8 +8,22 @@ export const styles = StyleSheet.create({
     },
     price: {
         backgroundColor: 'white',
-        marginTop: 40,
+        marginTop: 5,
         marginBottom: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    cod: {
+        backgroundColor: 'white',
+        marginTop: 40,
+        // marginBottom: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    fee: {
+        backgroundColor: 'white',
+        marginTop: 5,
+        // marginBottom: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
     },

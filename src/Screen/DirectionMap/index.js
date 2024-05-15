@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import MapboxGL from '@rnmapbox/maps';
 import {
     TouchableOpacity,
@@ -20,36 +20,41 @@ import { Button } from '../../Components/Button';
 import { NameScreen } from '../../Constants/nameScreen';
 import { useRoute } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
+import NotificationModal from '../../Components/notificationModal';
+import AppContext from '../../Context';
 
 const accessToken =
     'pk.eyJ1IjoicGh0b2FuIiwiYSI6ImNsczhxaWo2ajAwcDkyaHBlZHc4emZ4M3EifQ.crMxOzzk-VaIGZ3x8UlV4Q';
 MapboxGL.setAccessToken(accessToken);
+
 const DirectionMap = ({ navigation }) => {
-    // const { longDestination, latDestination } = useRoute().params;
+    const routes = useRoute();
+    const { visiblePopup, setVisiblePopup } = useContext(AppContext);
+    const { latDestination, longDestination } = routes?.params;
     const [directionData, setDirectionData] = useState(null);
     const [zoomLevel, setZoomLevel] = useState(15);
     const [index, setIndex] = useState(0);
     const [route, setRoute] = useState({});
     const [distance, setDistance] = useState(0);
     const [duration, setDuration] = useState(0);
-
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [start, setStart] = useState(false);
+    const [endDirection, setEndDirection] = useState(false);
     const [latCurrent, setLatCurrent] = useState(null);
     const [longCurrent, setLongCurrent] = useState(null);
+    const [coordinates, setCoordinates] = useState([]);
     Geolocation.getCurrentPosition((info) => {
         setLatCurrent(info.coords.latitude);
         setLongCurrent(info.coords.longitude);
     });
 
-    const origin1 = [longCurrent, latCurrent];
-    // const destination = [longCurrent, latCurrent];
-    const origin = [105.7854364, 20.9787633];
-    const destination = [105.82884520100004, 21.065551010000036];
+    const destination = [longDestination, latDestination];
+    const origin = [longCurrent, latCurrent];
     useEffect(() => {
-        // if (latCurrent !== null && longCurrent !== null) {
-        //     console.log('latCurrent: ', latCurrent);
-        fetchDirectionData();
-        // }
-    }, []);
+        if (latCurrent && longCurrent) {
+            fetchDirectionData();
+        }
+    }, [longCurrent, latCurrent]);
 
     const fetchDirectionData = async () => {
         try {
@@ -57,22 +62,58 @@ const DirectionMap = ({ navigation }) => {
                 `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?alternatives=true&geometries=geojson&overview=full&steps=true&language=vi&access_token=${accessToken}`
             );
             const data = await response.json();
-            console.log(data);
             setDirectionData(data.routes[index].geometry);
             setDistance(data.routes[index].distance);
             setDuration(data.routes[index].duration);
+            setCoordinates(data.routes[index]?.geometry?.coordinates);
             setRoute(data.routes[index]);
         } catch (error) {
             console.error('Error fetching direction data:', error);
         }
     };
+
     const onPressExit = () => {
         navigation.goBack();
     };
 
+    useEffect(() => {
+        if (start) {
+            const interval = setInterval(() => {
+                setCurrentIndex(
+                    (prevIndex) => (prevIndex + 1) % coordinates.length
+                );
+            }, 100);
+            if (currentIndex === coordinates.length - 1) {
+                console.log('Đã đến điểm cuối');
+                setStart(false);
+                setEndDirection(true);
+                clearInterval(interval);
+            }
+            return () => clearInterval(interval);
+        }
+    }, [coordinates, currentIndex, start]);
+
+    const onStart = () => {
+        if (!start) {
+            setStart(true);
+        } else {
+            setCurrentIndex(coordinates.length - 1);
+            setStart(false);
+            setEndDirection(true);
+        }
+    };
+
     return (
         <View style={{ flex: 1 }}>
-            {directionData ? (
+            <NotificationModal
+                Message={'Đơn hàng này đã bị huỷ. Vui lòng nhận đơn hàng khác!'}
+                Visible={visiblePopup}
+                onHide={() => {
+                    setVisiblePopup(false);
+                    navigation.navigate(NameScreen.BOTTOM_TAB);
+                }}
+            />
+            {longCurrent && latCurrent && directionData ? (
                 <>
                     <MapboxGL.MapView
                         style={{ flex: 5 }}
@@ -81,11 +122,10 @@ const DirectionMap = ({ navigation }) => {
                     >
                         <MapboxGL.Camera
                             zoomLevel={zoomLevel}
-                            centerCoordinate={origin1}
+                            centerCoordinate={coordinates[currentIndex]}
                             pitch={60}
                             animationDuration={0}
                         />
-                        {/* {directionData && ( */}
                         <MapboxGL.ShapeSource
                             id="directionSource"
                             shape={directionData}
@@ -98,10 +138,9 @@ const DirectionMap = ({ navigation }) => {
                                 }}
                             />
                         </MapboxGL.ShapeSource>
-                        {/* )} */}
                         <MapboxGL.PointAnnotation
                             id="marker1"
-                            coordinate={origin1}
+                            coordinate={coordinates[currentIndex]}
                         >
                             <View style={styles.locateCurrent}>
                                 <DotIcon
@@ -112,7 +151,7 @@ const DirectionMap = ({ navigation }) => {
                             </View>
                         </MapboxGL.PointAnnotation>
                         <MapboxGL.PointAnnotation
-                            id="marker1"
+                            id="marker2"
                             coordinate={destination}
                         >
                             <View>
@@ -165,7 +204,14 @@ const DirectionMap = ({ navigation }) => {
                             </TouchableOpacity>
                         </View>
                     </View>
-                    <View style={styles.footer}>
+                    <View
+                        style={[
+                            styles.footer,
+                            {
+                                height: endDirection ? '8%' : '16%',
+                            },
+                        ]}
+                    >
                         <View style={styles.route}>
                             <TextFont
                                 fs={22}
@@ -178,47 +224,49 @@ const DirectionMap = ({ navigation }) => {
                                 color={color.StatusGreen}
                             />
                         </View>
-                        <View style={styles.buttonArea}>
-                            <Button
-                                colorTitle={'white'}
-                                colorBackground={color.Blue}
-                                onPress={() => {}}
-                                title={'Bắt đầu'}
-                                icon={() => {
-                                    return (
-                                        <ArrowTop
-                                            height={20}
-                                            width={20}
-                                            color="white"
-                                        />
-                                    );
-                                }}
-                            />
-                            <Button
-                                colorTitle={color.RoyalBlue}
-                                colorBackground={color.white}
-                                onPress={() => {
-                                    navigation.navigate(
-                                        NameScreen.STEPS_SCREEN,
-                                        (params = {
-                                            distance,
-                                            duration,
-                                            route,
-                                        })
-                                    );
-                                }}
-                                title={'Các bước'}
-                                icon={() => {
-                                    return (
-                                        <ListPointers
-                                            height={30}
-                                            width={30}
-                                            color={color.RoyalBlue}
-                                        />
-                                    );
-                                }}
-                            />
-                        </View>
+                        {!endDirection && (
+                            <View style={styles.buttonArea}>
+                                <Button
+                                    colorTitle={'white'}
+                                    colorBackground={color.Blue}
+                                    onPress={onStart}
+                                    title={!start ? 'Bắt đầu' : 'Kết thúc'}
+                                    icon={() => {
+                                        return (
+                                            <ArrowTop
+                                                height={20}
+                                                width={20}
+                                                color="white"
+                                            />
+                                        );
+                                    }}
+                                />
+                                <Button
+                                    colorTitle={color.RoyalBlue}
+                                    colorBackground={color.white}
+                                    onPress={() => {
+                                        navigation.navigate(
+                                            NameScreen.STEPS_SCREEN,
+                                            (params = {
+                                                distance,
+                                                duration,
+                                                route,
+                                            })
+                                        );
+                                    }}
+                                    title={'Các bước'}
+                                    icon={() => {
+                                        return (
+                                            <ListPointers
+                                                height={30}
+                                                width={30}
+                                                color={color.RoyalBlue}
+                                            />
+                                        );
+                                    }}
+                                />
+                            </View>
+                        )}
                     </View>
                 </>
             ) : (
@@ -273,7 +321,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         width: '100%',
         bottom: 1,
-        height: '16%',
+        // height: '16%',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 5,

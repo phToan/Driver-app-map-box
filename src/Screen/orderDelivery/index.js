@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, SafeAreaView, Text, ScrollView, Linking } from 'react-native';
 import { styles } from './styles';
 import axios from 'axios';
@@ -8,13 +8,22 @@ import { Header } from '../../Components/Header';
 import { Button } from '../../Components/Button';
 import { InfoOrderUser } from '../../Components/infoOrderUser';
 import { NameScreen } from '../../Constants/nameScreen';
+import { PhoneCallIcon, PhoneIcon } from '../../assets/Icons';
+import color from '../../assets/color';
+import LoadingModal from '../../Components/LoadingModal';
+import NotificationModal from '../../Components/notificationModal';
+import { update, getDatabase, ref } from 'firebase/database';
+import { instance } from '../../Api/instance';
+import AppContext from '../../Context';
 
 const OrderDelivery = ({ navigation, route }) => {
-    const API_KEY = 'uGwlo6yHxKnoqSPqp0Enla92wOd1YpmpbYrEy3GK';
-    const [latitude, setLatitude] = useState(null);
-    const [longitude, setLongitude] = useState(null);
-    const [region, setRegion] = useState(null);
+    const { setIsOrderSelected } = useContext(AppContext);
     const item = route?.params.item;
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [visible, setVisible] = useState(false);
+    const database = getDatabase();
+    const dataRef = ref(database, `order/${item.key}/driver`);
     console.log('item: ', item);
     const currentTime = moment()
         .tz('Asia/Bangkok')
@@ -32,10 +41,57 @@ const OrderDelivery = ({ navigation, route }) => {
     };
 
     const openGoogleMaps = () => {
-        navigation.navigate(NameScreen.DIRECTION_MAP_SCREEN);
+        navigation.navigate(NameScreen.DIRECTION_MAP_SCREEN, {
+            longDestination: item?.receiverInfo?.long,
+            latDestination: item?.receiverInfo?.lat,
+        });
     };
 
-    const onClickSuccess = async () => {};
+    const onClickSuccess = async () => {
+        setLoading(true);
+        const updateData = {
+            id: 1,
+            status: 3,
+            onSuccess: currentTime,
+        };
+        update(dataRef, updateData)
+            .then(() => {
+                saveDB();
+                //
+                // navigation.navigate(NameScreen.BOTTOM_TAB);
+            })
+            .catch((e) => {
+                setLoading(false);
+                setVisible(true);
+                setMessage(
+                    'Xác nhận giao hàng không thành công. Vui lòng liên hệ với bộ phận chăm sóc khách hàng hoặc thử lại sau ít phút!'
+                );
+                console.log('err: ', e);
+            });
+    };
+
+    const payload = {
+        id_Order: item?.id,
+        driver_id: item?.driver?.id,
+        status: 1,
+        takeAt: item?.driver?.onTaken,
+        confirmAt: item?.driver?.onSuccess,
+    };
+
+    const saveDB = async () => {
+        await instance
+            .post('/order/driver', payload)
+            .then((res) => {
+                console.log(res);
+                setLoading(false);
+                setIsOrderSelected(false);
+                navigation.navigate(NameScreen.BOTTOM_TAB);
+            })
+            .catch((err) => {
+                setLoading(false);
+                console.log(err);
+            });
+    };
     const onClickPhone = async () => {
         const isAvailable = await Linking.canOpenURL(
             `tel:${item.receiverInfo.phone}`
@@ -52,35 +108,15 @@ const OrderDelivery = ({ navigation, route }) => {
     const onClickDetail = () => {
         navigation.navigate(NameScreen.WATCH_DETAIL_SCREEN, { item });
     };
-    useEffect(() => {
-        const getLocationCoordinates = async () => {
-            try {
-                const addresses = item.receiverInfo.address;
-                const response = await axios.get(
-                    `https://rsapi.goong.io/Geocode?address=${addresses}&api_key=${API_KEY}`
-                );
-                const data = response.data;
-                if (data.status === 'OK' && data.results.length > 0) {
-                    const location = data.results[0].geometry.location;
-                    setLatitude(location.lat);
-                    setLongitude(location.lng);
-                    console.log(`llll: ${location.lat},${location.lng}`);
-                    setRegion({
-                        latitude: location.lat,
-                        longitude: location.lng,
-                        latitudeDelta: 0.001,
-                        longitudeDelta: 0.001,
-                    });
-                }
-            } catch (error) {
-                console.log(error.message + 'l');
-            }
-        };
-        getLocationCoordinates();
-    }, []);
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
+            <LoadingModal visible={loading} />
+            <NotificationModal
+                Message={message}
+                Visible={visible}
+                onHide={() => setVisible(false)}
+            />
             <Header onClickReturn={onClickReturn} title="Thông tin giao hàng" />
             <View style={styles.body}>
                 <ScrollView>
@@ -90,7 +126,11 @@ const OrderDelivery = ({ navigation, route }) => {
                         </Text>
                     </View>
                     <View style={styles.map}>
-                        <Map lat={latitude} lng={longitude} delta={0.001} />
+                        <Map
+                            lat={item?.receiverInfo?.lat}
+                            lng={item?.receiverInfo?.long}
+                            delta={0.001}
+                        />
                     </View>
                     <View style={styles.address}>
                         <Text style={styles.t_address}>
@@ -122,8 +162,15 @@ const OrderDelivery = ({ navigation, route }) => {
                         <Button
                             colorBackground={'green'}
                             colorTitle={'white'}
-                            title={'Gọi điện'}
+                            title={item.receiverInfo.phone}
                             onPress={onClickPhone}
+                            icon={() => (
+                                <PhoneIcon
+                                    height={30}
+                                    width={30}
+                                    color={color.white}
+                                />
+                            )}
                         />
                         <Button
                             colorBackground={'#ec09a8'}
@@ -155,7 +202,7 @@ const OrderDelivery = ({ navigation, route }) => {
                     onPress={onclickDel}
                 />
                 <Button
-                    colorBackground={'darkorange'}
+                    colorBackground={color.orange}
                     colorTitle={'white'}
                     title={'Giao hàng thành công'}
                     onPress={onClickSuccess}

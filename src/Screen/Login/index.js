@@ -58,7 +58,6 @@ const Login = ({ navigation }) => {
                         res.data.refresh_token
                     );
                     setLoading(false);
-                    // console.log('djdkd');
                     navigation.navigate(NameScreen.BOTTOM_TAB);
                     // setPassword('')
                     setHidePass(true);

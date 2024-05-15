@@ -16,6 +16,8 @@ import { instance } from '../../Api/instance';
 import LoadingModal from '../../Components/LoadingModal';
 import { getDatabase, ref, update } from 'firebase/database';
 import AppContext from '../../Context';
+import moment from 'moment-timezone';
+import { TextFont } from '../../Components/Text';
 
 const OrderInfo = ({ route, navigation }) => {
     const { isOrderSelected } = useContext(AppContext);
@@ -32,6 +34,9 @@ const OrderInfo = ({ route, navigation }) => {
         navigation.goBack();
     };
     const [loading, setLoading] = useState(false);
+    const currentTime = moment()
+        .tz('Asia/Bangkok')
+        .format('YYYY-MM-DD HH:mm:ss');
 
     useEffect(() => {
         const getData = async () => {
@@ -58,6 +63,7 @@ const OrderInfo = ({ route, navigation }) => {
         const updateData = {
             id: 1,
             status: 1,
+            onReceive: currentTime,
         };
         update(dataRef, updateData)
             .then(() => {
@@ -132,13 +138,45 @@ const OrderInfo = ({ route, navigation }) => {
                         size={item.size_item}
                         detail={item.detail_item}
                     />
+
+                    {item.COD && (
+                        <View style={styles.cod}>
+                            <TextFont
+                                title={'Thu hộ (COD):'}
+                                fs={16}
+                                fw={'500'}
+                            />
+                            <TextFont
+                                title={`${item.COD}đ`}
+                                fs={16}
+                                fw={'500'}
+                            />
+                        </View>
+                    )}
+                    {item.transportFee && (
+                        <View
+                            style={[
+                                styles.fee,
+                                {
+                                    marginTop: item.COD ? 0 : 40,
+                                },
+                            ]}
+                        >
+                            <TextFont
+                                title={'Phí vận chuyển:'}
+                                fs={16}
+                                fw={'500'}
+                            />
+                            <TextFont
+                                title={`${item.transportFee}đ`}
+                                fs={16}
+                                fw={'500'}
+                            />
+                        </View>
+                    )}
                     <View style={styles.price}>
-                        <Text style={{ fontSize: 16, fontWeight: '500' }}>
-                            Thành tiền:
-                        </Text>
-                        <Text style={{ fontSize: 16, fontWeight: '500' }}>
-                            {item.price}đ
-                        </Text>
+                        <TextFont title={'Thành tiền:'} fs={16} fw={'500'} />
+                        <TextFont title={`${item.price}đ`} fs={16} fw={'500'} />
                     </View>
                 </ScrollView>
             </View>

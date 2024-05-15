@@ -16,16 +16,23 @@ import color from '../../assets/color';
 import Geolocation from '@react-native-community/geolocation';
 import { update, getDatabase, ref } from 'firebase/database';
 import AppContext from '../../Context';
+import { useIsFocused } from '@react-navigation/native';
+import { PhoneIcon } from '../../assets/Icons';
 
 const OrderTaken = ({ navigation, route }) => {
-    const { setIsOrderSelected } = useContext(AppContext);
-    const API_KEY = 'uGwlo6yHxKnoqSPqp0Enla92wOd1YpmpbYrEy3GK';
-    const [latitude, setLatitude] = useState(null);
-    const [longitude, setLongitude] = useState(null);
-    const [region, setRegion] = useState(null);
+    const {
+        setIsOrderSelected,
+        setFocusScreen,
+        focusScreen,
+        keySelected,
+        setKeySelected,
+        visiblePopup,
+        setVisiblePopup,
+    } = useContext(AppContext);
     const [loading, setLoading] = useState(false);
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
+    const isFocused = useIsFocused();
     const database = getDatabase();
     const item = route?.params.item;
     const dataRef = ref(database, `order/${item.key}/driver`);
@@ -35,6 +42,7 @@ const OrderTaken = ({ navigation, route }) => {
     const currentTime = moment()
         .tz('Asia/Bangkok')
         .format('YYYY-MM-DD HH:mm:ss');
+
     const data = {
         id_Order: item.id,
         takeAt: currentTime,
@@ -49,7 +57,10 @@ const OrderTaken = ({ navigation, route }) => {
     };
 
     const openGoogleMaps = () => {
-        navigation.navigate(NameScreen.DIRECTION_MAP_SCREEN);
+        navigation.navigate(NameScreen.DIRECTION_MAP_SCREEN, {
+            longDestination: item?.senderInfo?.long,
+            latDestination: item?.senderInfo?.lat,
+        });
     };
 
     const onclickDel = async () => {
@@ -57,12 +68,13 @@ const OrderTaken = ({ navigation, route }) => {
         const updateData = {
             id: 0,
             status: 0,
+            onReceive: '',
         };
         update(dataRef, updateData)
             .then(() => {
                 setIsOrderSelected(false);
                 setLoading(false);
-                navigation.goBack();
+                navigation.navigate(NameScreen.BOTTOM_TAB);
             })
             .catch((e) => {
                 setLoading(false);
@@ -79,9 +91,11 @@ const OrderTaken = ({ navigation, route }) => {
         const updateData = {
             id: 1,
             status: 2,
+            onTaken: currentTime,
         };
         update(dataRef, updateData)
             .then(() => {
+                // saveDB();
                 setLoading(false);
                 navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
             })
@@ -95,45 +109,30 @@ const OrderTaken = ({ navigation, route }) => {
             });
     };
 
-    const getLocationCoordinates = async () => {
-        try {
-            const addresses = item.senderInfo.address;
-            // console.log(addresses)
-            const response = await axios.get(
-                `https://rsapi.goong.io/Geocode?address=${addresses}&api_key=${API_KEY}`
-            );
-
-            const data = response.data;
-            if (data.status === 'OK' && data.results.length > 0) {
-                const location = data.results[0].geometry.location;
-                setLatitude(location.lat);
-                setLongitude(location.lng);
-                setRegion({
-                    latitude: location.lat,
-                    longitude: location.lng,
-                    latitudeDelta: 0.001,
-                    longitudeDelta: 0.001,
-                });
-            }
-        } catch (error) {
-            console.log(error.message + 'l');
-        }
-    };
-
-    const getCurrentLocation = async () => {
-        try {
-            await Geolocation.getCurrentPosition((position) => {
-                const { latitude, longitude } = position.coords;
+    const saveDB = async () => {
+        await instance
+            .put('/driver/update', data)
+            .then((res) => {
+                console.log(res);
+                if (res.data.err == 0) {
+                    navigation.navigate(NameScreen.DELIVERY_SCREEN, { item });
+                } else {
+                    console.log('failure');
+                }
+            })
+            .catch((err) => {
+                console.log(err);
             });
-        } catch (error) {
-            console.log(error);
-        }
     };
 
     useEffect(() => {
-        getLocationCoordinates();
-        getCurrentLocation();
-    }, []);
+        if (isFocused) {
+            setFocusScreen('TakenScreen');
+            console.log(item?.key);
+            setKeySelected(item?.key);
+        }
+    }, [isFocused]);
+    console.log(keySelected);
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
@@ -141,6 +140,14 @@ const OrderTaken = ({ navigation, route }) => {
                 Message={message}
                 Visible={visible}
                 onHide={onHide}
+            />
+            <NotificationModal
+                Message={'Đơn hàng này đã bị huỷ. Vui lòng nhận đơn hàng khác!'}
+                Visible={visiblePopup}
+                onHide={() => {
+                    setVisiblePopup(false);
+                    navigation.navigate(NameScreen.BOTTOM_TAB);
+                }}
             />
             <LoadingModal visible={loading} />
             <Header
@@ -156,7 +163,11 @@ const OrderTaken = ({ navigation, route }) => {
                         </Text>
                     </View>
                     <View style={styles.map}>
-                        <Map lat={latitude} lng={longitude} delta={0.01} />
+                        <Map
+                            lat={item?.senderInfo?.lat}
+                            lng={item?.senderInfo?.long}
+                            delta={0.01}
+                        />
                     </View>
                     <View style={styles.address}>
                         <Text style={styles.t_address}>
@@ -193,8 +204,15 @@ const OrderTaken = ({ navigation, route }) => {
                         <Button
                             colorBackground={'green'}
                             colorTitle={'white'}
-                            title={'Gọi điện'}
+                            title={item?.senderInfo?.phone}
                             onPress={onClickPhone}
+                            icon={() => (
+                                <PhoneIcon
+                                    height={30}
+                                    width={30}
+                                    color={color.white}
+                                />
+                            )}
                         />
                         <Button
                             colorBackground={'#e60aa4'}
@@ -203,9 +221,30 @@ const OrderTaken = ({ navigation, route }) => {
                             onPress={onClickDetail}
                         />
                     </View>
-                    <View style={styles.bt_detail_order}>
+                    {item?.COD && (
+                        <View style={styles.bt_detail_order}>
+                            <Text style={styles.text}>Thu hộ (COD)</Text>
+                            <Text style={styles.cast}>{item.COD} đ</Text>
+                        </View>
+                    )}
+                    {item?.transportFee && (
+                        <View
+                            style={[
+                                styles.payment,
+                                {
+                                    marginTop: item?.COD ? 5 : 20,
+                                },
+                            ]}
+                        >
+                            <Text style={styles.text}>Phí Giao hàng</Text>
+                            <Text style={styles.cast}>
+                                {item?.transportFee} đ
+                            </Text>
+                        </View>
+                    )}
+                    <View style={styles.payment}>
                         <Text style={styles.text}>Thanh toán</Text>
-                        <Text style={styles.cast}>{item.price} đ</Text>
+                        <Text style={styles.cast}>{item?.price} đ</Text>
                     </View>
                     <View style={styles.payment}>
                         <Text style={styles.text}>Hình thức thanh toán</Text>
@@ -222,7 +261,7 @@ const OrderTaken = ({ navigation, route }) => {
                     title={'Hủy đơn hàng'}
                 />
                 <Button
-                    colorBackground={'darkorange'}
+                    colorBackground={color.orange}
                     colorTitle={'white'}
                     onPress={onClickSuccess}
                     title={'Lấy hàng thành công'}

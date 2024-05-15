@@ -49,3 +49,4 @@ export { default as TurnIcon } from './arrowTurn.svg';
 export { default as TurnLeftIcon } from './arrowTurnLeft.svg';
 export { default as TurnRightIcon } from './arrowTurnRight.svg';
 export { default as ArrowHeadIcon } from './arrowHead.svg';
+export { default as PhoneIcon } from './phone.svg';

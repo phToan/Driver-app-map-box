@@ -8,6 +8,9 @@ export const AppProvider = ({ children }) => {
     const toggleLightDot = () => {
         setLightDot(!lightDot);
     };
+    const [keySelected, setKeySelected] = useState('');
+    const [visiblePopup, setVisiblePopup] = useState(false);
+    const [focusScreen, setFocusScreen] = useState('');
 
     return (
         <AppContext.Provider
@@ -16,6 +19,12 @@ export const AppProvider = ({ children }) => {
                 toggleLightDot,
                 isOrderSelected,
                 setIsOrderSelected,
+                focusScreen,
+                setFocusScreen,
+                keySelected,
+                setKeySelected,
+                visiblePopup,
+                setVisiblePopup,
             }}
         >
             {children}

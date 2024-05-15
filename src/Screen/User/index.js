@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     View,
     SafeAreaView,
@@ -15,15 +15,27 @@ import { TextFont } from '../../Components/Text';
 import { OptionItem } from './components/optionItem';
 import { NameScreen } from '../../Constants/nameScreen';
 import NotificationModal from '../../Components/notificationModal';
+import {
+    getDatabase,
+    onValue,
+    off,
+    ref,
+    onChildAdded,
+    onChildRemoved,
+} from 'firebase/database';
+import AppContext from '../../Context';
 
 const Others = () => {
     const navigation = useNavigation();
+    const { lightDot } = useContext(AppContext);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [id, setID] = useState('');
     const [gender, setGender] = useState(true);
     const [visible, setVisible] = useState(false);
     const [message, setMessage] = useState('');
+    const [isEnabled, setIsEnabled] = useState(false);
+    const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
     useEffect(() => {
         const getData = async () => {
             setName(await AsyncStorage.getItem('name'));
@@ -32,6 +44,17 @@ const Others = () => {
         };
         getData();
     });
+    useEffect(() => {
+        const database = getDatabase();
+        const dataRef = ref(database, 'active_status');
+        const onDataChange = (snapshot) => {
+            const newData = snapshot.val() ?? [];
+            const arr = Object.values(newData);
+            const isAuto = arr.some((e) => e.id === 5);
+            setIsEnabled(isAuto);
+        };
+        onValue(dataRef, onDataChange);
+    }, []);
     if (gender) {
         imageSource = ManIcon;
     } else {
@@ -41,6 +64,13 @@ const Others = () => {
         navigation.navigate(NameScreen.ACCOUNT_SCREEN);
     };
     const onClickLogOut = () => {
+        if (lightDot) {
+            setMessage(
+                'Bạn đang có đơn hàng chưa hoàn thành. Vui lòng hoàn thành đơn hàng hiện tại và đăng xuất tài khoản!'
+            );
+            setVisible(true);
+            return;
+        }
         navigation.popToTop();
     };
     return (
@@ -67,8 +97,9 @@ const Others = () => {
                 <OptionItem
                     content={'Tự động nhận đơn'}
                     onPress={() => {}}
-                    secondText={'Tắt'}
                     id={1}
+                    isEnabled={isEnabled}
+                    toggleSwitch={toggleSwitch}
                 />
                 <OptionItem
                     content={'Cập nhật giấy tờ'}
