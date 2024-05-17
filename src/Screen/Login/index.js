@@ -10,7 +10,7 @@ import {
     ToastAndroid,
 } from 'react-native';
 import ToastManager, { Toast } from 'toastify-react-native';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Entypo, FontAwesome } from '../../assets/icon';
 import NotificationModal from '../../Components/notificationModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,11 +23,13 @@ import { instance } from '../../Api/instance';
 import { styles } from './styles';
 import LoadingModal from '../../Components/LoadingModal';
 import Geolocation from '@react-native-community/geolocation';
+import AppContext from '../../Context';
 
 const Login = ({ navigation }) => {
-    Geolocation.getCurrentPosition((info) => {
-        console.log('coord: ', info.coords);
-    });
+    // Geolocation.getCurrentPosition((info) => {
+    //     console.log('coord: ', info.coords);
+    // });
+    const { setKey, setAvatar } = useContext(AppContext);
     const [hidePass, setHidePass] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -61,7 +63,7 @@ const Login = ({ navigation }) => {
                     navigation.navigate(NameScreen.BOTTOM_TAB);
                     // setPassword('')
                     setHidePass(true);
-                    getData();
+                    getData(setKey, setAvatar);
                 } else {
                     setLoading(false);
                     setErrorMessage(

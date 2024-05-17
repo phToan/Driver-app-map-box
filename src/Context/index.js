@@ -11,6 +11,8 @@ export const AppProvider = ({ children }) => {
     const [keySelected, setKeySelected] = useState('');
     const [visiblePopup, setVisiblePopup] = useState(false);
     const [focusScreen, setFocusScreen] = useState('');
+    const [key, setKey] = useState('');
+    const [avatar, setAvatar] = useState('');
 
     return (
         <AppContext.Provider
@@ -25,6 +27,10 @@ export const AppProvider = ({ children }) => {
                 setKeySelected,
                 visiblePopup,
                 setVisiblePopup,
+                key,
+                setKey,
+                avatar,
+                setAvatar,
             }}
         >
             {children}

@@ -14,7 +14,6 @@
         "assetBundlePatterns": ["**/*"],
         "ios": {
             "supportsTablet": true,
-            "googleServicesFile": "./GoogleService-Info.plist",
             "bundleIdentifier": "com.daple0803.mapbox"
         },
         "android": {
@@ -35,13 +34,14 @@
                     "RNMapboxMapsDownloadToken": "sk.eyJ1IjoicGh0b2FuIiwiYSI6ImNsdWM3bWV1ajE0YmIya25pMWdmNzZzb2IifQ.vqscx8T6AutVDhBOmUDlrg"
                 }
             ],
-            "@react-native-firebase/app",
             [
-                "expo-build-properties",
+                "expo-image-picker",
                 {
-                    "ios": {
-                        "useFrameworks": "static"
-                    }
+                    "photosPermission": "custom photos permission",
+                    "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera",
+
+                    "//": "Disables the microphone permission",
+                    "microphonePermission": false
                 }
             ]
         ]

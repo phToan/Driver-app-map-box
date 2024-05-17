@@ -14,6 +14,7 @@ import EditProfile from '../Screen/Account/EditProfile';
 import EditPassword from '../Screen/Account/EditPassword';
 import DirectionMap from '../Screen/DirectionMap';
 import Steps from '../Screen/Steps';
+import AutoReceiveOrder from '../Screen/AutoReceiveOrder';
 
 const Stack = createNativeStackNavigator();
 
@@ -71,9 +72,13 @@ export const StackScreen = () => {
                 component={DirectionMap}
             />
             <Stack.Screen name={NameScreen.STEPS_SCREEN} component={Steps} />
+            <Stack.Screen
+                name={NameScreen.AUTO_RECEIVE_ORDER_SCREEN}
+                component={AutoReceiveOrder}
+            />
             {/* <Stack.Screen name='history' component={HistoryScreen} />
             <Stack.Screen name='notificationDriver' component={NotificationScreen} />
-            <Stack.Screen name='order' component={Order} />
+            <Stack.Screen name='order' component={AutoReceiveOrder} />
             <Stack.Screen name='others' component={Others} />
             <Stack.Screen name='statistics' component={Statistics} />
             <Stack.Screen name='completedOrder' component={CompletedOrder} />

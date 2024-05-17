@@ -24,7 +24,7 @@ const OrderDelivery = ({ navigation, route }) => {
     const [visible, setVisible] = useState(false);
     const database = getDatabase();
     const dataRef = ref(database, `order/${item.key}/driver`);
-    console.log('item: ', item);
+    // console.log('item: ', item);
     const currentTime = moment()
         .tz('Asia/Bangkok')
         .format('YYYY-MM-DD HH:mm:ss');
@@ -77,19 +77,22 @@ const OrderDelivery = ({ navigation, route }) => {
         takeAt: item?.driver?.onTaken,
         confirmAt: item?.driver?.onSuccess,
     };
+    console.log(payload);
 
     const saveDB = async () => {
         await instance
             .post('/order/driver', payload)
             .then((res) => {
-                console.log(res);
-                setLoading(false);
-                setIsOrderSelected(false);
-                navigation.navigate(NameScreen.BOTTOM_TAB);
+                console.log(res.status);
+                if (res.status === 200) {
+                    setLoading(false);
+                    setIsOrderSelected(false);
+                    navigation.navigate(NameScreen.BOTTOM_TAB);
+                }
             })
             .catch((err) => {
                 setLoading(false);
-                console.log(err);
+                console.log(': ', err);
             });
     };
     const onClickPhone = async () => {

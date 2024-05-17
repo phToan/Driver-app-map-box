@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { View, SafeAreaView, StyleSheet, Image } from 'react-native';
+import React, { useContext, useState } from 'react';
+import {
+    View,
+    SafeAreaView,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import AppContext from '../../../Context';
@@ -10,8 +16,21 @@ import NotificationModal from '../../../Components/notificationModal';
 import { InputField } from '../../../Components/TextInputField';
 import { DobField } from '../../../Components/TextInputField/dobField';
 import { ButtonConfirm } from '../../../Components/ButtonConfirm';
+import * as ImagePicker from 'expo-image-picker';
+import { update, getDatabase, ref } from 'firebase/database';
+import {
+    ref as refStorage,
+    uploadBytes,
+    getDownloadURL,
+    getStorage,
+} from 'firebase/storage';
+import firebaseDB from '../../../../firebaseConfig';
+// import { Cloudinary } from '../../../Helper/cloudinary';
+import axios from 'axios';
 
 const EditProfile = ({ route }) => {
+    const { key, avatar, setAvatar } = useContext(AppContext);
+    console.log('key: ', key);
     const navigation = useNavigation();
     const [nameUser, setNameUser] = useState(route?.params.data.name);
     const [dateOfBirth, setDateOfBirth] = useState(route.params.data.dob);
@@ -19,7 +38,9 @@ const EditProfile = ({ route }) => {
     const [showModal, setShowModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
-
+    const [image, setImage] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const database = getDatabase();
     const gender = route.params.data.gender;
     const onChange = (event, selectedDate) => {
         const currentDate = selectedDate;
@@ -105,6 +126,55 @@ const EditProfile = ({ route }) => {
     const changeName = (text) => {
         setNameUser(text);
     };
+    const handleChangeImage = async () => {
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            });
+            if (!result.canceled) {
+                setAvatar(result.assets[0].uri);
+                setImage(result.assets[0].uri);
+                uploadImageToCloudinary(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.log('err: ', error);
+        }
+    };
+
+    const uploadImageToCloudinary = async (uri) => {
+        const data = new FormData();
+        data.append('file', {
+            uri,
+            type: 'image/jpg',
+            name: 'driverAvatar1',
+        });
+        data.append('upload_preset', '_uploadAvatar');
+
+        try {
+            const response = await axios.post(
+                'https://api.cloudinary.com/v1_1/daemetv0m/image/upload',
+                data
+            );
+            if (response.status === 200) {
+                const dataRef = ref(database, `avatar/driver/${key}`);
+                const updateData = {
+                    avatar: response?.data?.secure_url,
+                };
+                update(dataRef, updateData)
+                    .then(() => {
+                        console.log('upload success');
+                    })
+                    .catch((e) => {
+                        console.log('err: ', e);
+                    });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -116,9 +186,15 @@ const EditProfile = ({ route }) => {
             <Header onClickReturn={onClickReturn} title={'Chỉnh sửa hồ sơ'} />
 
             <View style={styles.body}>
-                <View style={styles._image}>
-                    <Image source={imageSource} style={styles.avatar} />
-                </View>
+                <TouchableOpacity
+                    style={styles._image}
+                    onPress={handleChangeImage}
+                >
+                    <Image
+                        source={avatar ? { uri: avatar } : imageSource}
+                        style={styles.avatar}
+                    />
+                </TouchableOpacity>
                 <InputField
                     value={nameUser}
                     onChangeText={changeName}

@@ -27,7 +27,7 @@ import AppContext from '../../Context';
 
 const Others = () => {
     const navigation = useNavigation();
-    const { lightDot } = useContext(AppContext);
+    const { lightDot, avatar } = useContext(AppContext);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [id, setID] = useState('');
@@ -86,7 +86,10 @@ const Others = () => {
                 onPress={onClickUserAccount}
             >
                 <View style={styles._header_item}>
-                    <Image source={imageSource} style={styles.avatar} />
+                    <Image
+                        source={avatar ? { uri: avatar } : imageSource}
+                        style={styles.avatar}
+                    />
                 </View>
                 <View style={styles.labelInfo}>
                     <TextFont fs={16} fw={'bold'} title={name} />
@@ -129,10 +132,9 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
     },
     avatar: {
-        width: 70,
-        height: 70,
-        resizeMode: 'contain',
-        borderRadius: 70 / 2,
+        width: 60,
+        height: 60,
+        borderRadius: 60 / 2,
     },
     _header_item: {
         shadowOffset: { width: 0, height: 4 },

@@ -91,7 +91,7 @@ packagingOptions {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.mapbox"
+    namespace 'com.daple0803.mapbox'
     defaultConfig {
         applicationId 'com.daple0803.mapbox'
         minSdkVersion rootProject.ext.minSdkVersion

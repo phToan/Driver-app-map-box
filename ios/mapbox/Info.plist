@@ -42,6 +42,10 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to open the camera</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>custom photos permission</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
@@ -69,10 +73,10 @@
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Allow app to use your location</string>
+    <string>...</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>Allow app to use your location</string>
+    <string>...</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Allow app to use your location</string>
+    <string>...</string>
   </dict>
 </plist>

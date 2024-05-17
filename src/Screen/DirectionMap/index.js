@@ -82,7 +82,7 @@ const DirectionMap = ({ navigation }) => {
                 setCurrentIndex(
                     (prevIndex) => (prevIndex + 1) % coordinates.length
                 );
-            }, 100);
+            }, 300);
             if (currentIndex === coordinates.length - 1) {
                 console.log('Đã đến điểm cuối');
                 setStart(false);
