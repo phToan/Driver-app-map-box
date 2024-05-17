@@ -5,9 +5,13 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
+    Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+// import DateTimePicker, {
+//     DateTimePickerAndroid,
+// } from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import AppContext from '../../../Context';
 import { GirlIcon, ManIcon } from '../../../assets/images';
 import { instance } from '../../../Api/instance';
@@ -18,15 +22,9 @@ import { DobField } from '../../../Components/TextInputField/dobField';
 import { ButtonConfirm } from '../../../Components/ButtonConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import { update, getDatabase, ref } from 'firebase/database';
-import {
-    ref as refStorage,
-    uploadBytes,
-    getDownloadURL,
-    getStorage,
-} from 'firebase/storage';
-import firebaseDB from '../../../../firebaseConfig';
-// import { Cloudinary } from '../../../Helper/cloudinary';
 import axios from 'axios';
+import { renderDate, renderTime } from '../../../Helper/rederTime';
+import LoadingModal from '../../../Components/LoadingModal';
 
 const EditProfile = ({ route }) => {
     const { key, avatar, setAvatar } = useContext(AppContext);
@@ -34,41 +32,41 @@ const EditProfile = ({ route }) => {
     const navigation = useNavigation();
     const [nameUser, setNameUser] = useState(route?.params.data.name);
     const [dateOfBirth, setDateOfBirth] = useState(route.params.data.dob);
-    const [date, setDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
-    const [image, setImage] = useState(null);
-    const [uploading, setUploading] = useState(false);
+    const [show, setShow] = useState(false);
     const database = getDatabase();
     const gender = route.params.data.gender;
-    const onChange = (event, selectedDate) => {
-        const currentDate = selectedDate;
-        setDate(currentDate);
-        setDateOfBirth(currentDate.toLocaleDateString('en-GB'));
-    };
-    const showMode = (currentMode) => {
-        DateTimePickerAndroid.open({
-            value: date,
-            onChange,
-            mode: currentMode,
-            is24Hour: true,
-        });
-        // <DateTimePicker
-        //     testID="dateTimePicker"
-        //     value={date}
-        //     mode="date"
-        //     is24Hour={true}
-        //     // display="default"
-        //     onChange={onChange}
-        // />;
-    };
+    const [loading, setLoading] = useState(false);
+    // const onChange = (event, selectedDate) => {
+    //     const currentDate = selectedDate;
+    //     setDate(currentDate);
+    //     setShow(setShow);
+    //     setDateOfBirth(currentDate.toLocaleDateString('en-GB'));
+    // };
+    //     const onChange = (event, selectedDate) => {
+    //     const currentDate = selectedDate || date;
+    //     setShow(Platform.OS === 'ios');
+    //     setDate(currentDate);
+    // };
+    // const showMode = (currentMode) => {
+    //     DateTimePickerAndroid.open({
+    //         value: date,
+    //         onChange,
+    //         mode: currentMode,
+    //         is24Hour: true,
+    //     });
+    // };
+
     const onClickReturn = () => {
         navigation.goBack();
     };
     const onClickCalendar = () => {
-        showMode('date');
+        // Platform.OS === 'ios' ? setShow(true) : showMode('date');
+        setShow(true);
     };
+
     const onClickUpdate = () => {
         if (nameUser !== '' && nameUser !== route.params.data.name) {
             data['name'] = nameUser;
@@ -95,19 +93,23 @@ const EditProfile = ({ route }) => {
         id: route.params.data.id,
     };
     const updateData = async (data) => {
+        setLoading(true);
         await instance
             .put('/driver', data)
             .then((res) => {
                 if (res.data.err == 0) {
+                    setLoading(false);
                     setIsSuccess(true);
                     setErrorMessage('Cập nhật thông tin thành công');
                     setShowModal(true);
                 } else {
+                    setLoading(false);
                     setErrorMessage('Cập nhật thông tin thất bại');
                     setShowModal(true);
                 }
             })
             .catch((err) => {
+                setLoading(false);
                 console.log(err);
             });
     };
@@ -115,10 +117,8 @@ const EditProfile = ({ route }) => {
     const onHideModal = () => {
         if (isSuccess) {
             setIsSuccess(false);
-            setTimeout(() => {
-                setShowModal(false);
-                navigation.goBack();
-            }, 2000);
+            setShowModal(false);
+            navigation.goBack();
         } else {
             setShowModal(false);
         }
@@ -136,7 +136,6 @@ const EditProfile = ({ route }) => {
             });
             if (!result.canceled) {
                 setAvatar(result.assets[0].uri);
-                setImage(result.assets[0].uri);
                 uploadImageToCloudinary(result.assets[0].uri);
             }
         } catch (error) {
@@ -158,6 +157,7 @@ const EditProfile = ({ route }) => {
                 'https://api.cloudinary.com/v1_1/daemetv0m/image/upload',
                 data
             );
+
             if (response.status === 200) {
                 const dataRef = ref(database, `avatar/driver/${key}`);
                 const updateData = {
@@ -175,9 +175,14 @@ const EditProfile = ({ route }) => {
             console.error(error);
         }
     };
+    const handleConfirm = (selectedDate) => {
+        setShow(false);
+        setDateOfBirth(renderDate(selectedDate));
+    };
 
     return (
         <SafeAreaView style={styles.container}>
+            <LoadingModal visible={loading} />
             <NotificationModal
                 onHide={onHideModal}
                 Visible={showModal}
@@ -213,6 +218,16 @@ const EditProfile = ({ route }) => {
                     isLabel={true}
                 />
             </View>
+            <DatePicker
+                modal
+                open={show}
+                date={new Date()}
+                maximumDate={new Date()}
+                onConfirm={handleConfirm}
+                onCancel={() => setShow(false)}
+                mode="date"
+                // theme="dark"
+            />
             <ButtonConfirm
                 footerStyle={styles.footer}
                 validate={true}
