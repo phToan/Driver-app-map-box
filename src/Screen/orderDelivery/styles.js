@@ -13,6 +13,11 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginTop: 10,
     },
+    image:{
+        height: 100,
+        width: 100,
+    },
+
     t_payment: {
         fontSize: 16,
         fontWeight: '500',

@@ -21,8 +21,11 @@ const CanceledOrder = () => {
                 params: require,
             })
             .then((res) => {
-                // console.log(res.data.data.rows)
-                setData(res.data.data.rows);
+                let arrData = []
+                res.data.data.rows.map((item)=>{
+                    arrData.unshift(item)
+                })
+                setData(arrData);
             })
             .catch((err) => {
                 console.log(err);

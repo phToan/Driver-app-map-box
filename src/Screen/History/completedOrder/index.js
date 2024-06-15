@@ -21,7 +21,11 @@ const CompletedOrder = () => {
                 params: require,
             })
             .then((res) => {
-                setData(res.data.data.rows);
+                let arrData = []
+                res.data.data.rows.map((item)=>{
+                    arrData.unshift(item)
+                })
+                setData(arrData);
             })
             .catch((err) => {
                 console.log(err);

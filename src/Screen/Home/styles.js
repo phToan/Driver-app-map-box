@@ -32,4 +32,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
+    autoField: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding:20,
+        backgroundColor: color.DarkOrange
+    }
 });
